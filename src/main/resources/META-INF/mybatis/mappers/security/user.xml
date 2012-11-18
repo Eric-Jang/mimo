@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kissme.mimo.domain.security.User">
+
+<resultMap type="User" id="userResult">
+	<id property="id" column="id"/>
+	<result property="username" column="username"/>
+	<result property="password" column="password"/>
+	<result property="accountNonLocked" column="account_non_locked"/>
+	<collection property="roles" ofType="Role" resultMap="roleOnUserResult"/>
+</resultMap>
+
+<resultMap type="Role" id="roleOnUserResult">
+	<id property="id" column="role_id"/>
+	<result property="name" column="role_name"/>
+	<collection property="authorities" ofType="Authority" resultMap="authorityOnUserResult"/>
+</resultMap>
+
+<resultMap type="Authority" id="authorityOnUserResult">
+	<id property="id" column="authority_id"/>
+	<result property="name" column="authority_name"/>
+	<result property="permission" column="authority_permission"/>
+</resultMap>
+
+<resultMap type="User" id="lazyUserResult">
+	<id property="id" column="id"/>
+	<result property="username" column="username"/>
+	<result property="password" column="password"/>
+	<result property="accountNonLocked" column="account_non_locked"/>
+	<collection property="roles" ofType="Role" resultMap="lazyRoleOnUserResult"/>
+</resultMap>
+
+<resultMap type="Role" id="lazyRoleOnUserResult">
+	<id property="id" column="role_id"/>
+	<result property="name" column="role_name"/>
+</resultMap>
+
+<sql id="commonSelect">
+	select 
+		self.*,
+		role.id as role_id,
+		role.name as role_name,
+		authority.id as authority_id,
+		authority.name as authority_name,
+		authority.permission as authority_permission 
+	from mimo_security_user self 
+	left join mimo_security_user_role userRole on self.id=userRole.user_id 
+  	left join mimo_security_role role on role.id=userRole.role_id 
+	left join mimo_security_role_authority roleAuthority on role.id=roleAuthority.role_id 
+	left join mimo_security_authority authority on authority.id=roleAuthority.authority_id 
+</sql>
+<sql id="lazySelect">
+	select 
+		self.*,
+		role.id as role_id,
+		role.name as role_name 
+	from mimo_security_user self 
+	left join mimo_security_user_role userRole on self.id=userRole.user_id 
+  	left join mimo_security_role role on role.id=userRole.role_id 
+</sql>
+
+<insert id="save" keyProperty="id" useGeneratedKeys="true" >
+	<selectKey keyProperty="id" resultType="string" order="BEFORE">
+		select replace(uuid(),'-','') as id
+	</selectKey>
+	
+	insert into mimo_security_user(id,username,password,account_non_locked) values(#{id},#{username},#{password},#{accountNonLocked})				
+</insert>
+<insert id="saveRoles" >
+	insert into mimo_security_user_role(user_id,role_id) values 
+	<foreach item="role" collection="roles" open="" separator="," close="">
+		(#{id},#{role.id})
+	</foreach>			
+</insert>
+
+<update id="update" >
+	update mimo_security_user set username=#{username},password=#{password},account_non_locked=#{accountNonLocked} where id=#{id}
+</update>
+
+<delete id="delete" >
+	delete from mimo_security_user where id=#{id}
+</delete>
+
+<delete id="deleteRoles" >
+	delete from mimo_security_user_role where user_id=#{id}
+</delete>
+
+<update id="markLocked" >
+	update mimo_security_user set account_non_locked=0 where id in 
+	<foreach item="id" collection="array" open="(" separator="," close=")">
+		#{id}
+	</foreach>
+</update>
+<update id="markNotLocked" >
+	update mimo_security_user set account_non_locked=1 where id in 
+	<foreach item="id" collection="array" open="(" separator="," close=")">
+		#{id}
+	</foreach>
+</update>
+
+<select id="idsAsNames" resultType="java.lang.String">
+	select username from mimo_security_user where id in 
+	<foreach item="id" collection="array" open="(" separator="," close=")">
+		#{id}
+	</foreach>
+</select>
+
+<select id="get" resultMap="userResult">
+	<include refid="commonSelect"/>
+	where self.id=#{id}
+</select>
+
+<select id="lazyGet" resultMap="lazyUserResult">
+	<include refid="lazySelect"/>
+	where self.id=#{id}
+</select>
+
+<select id="queryUniqueByUsername" resultMap="userResult">
+	<include refid="commonSelect"/>
+	where self.username=#{username}
+</select>
+
+<select id="queryPage" resultMap="lazyUserResult" useCache="false">
+	<include refid="lazySelect"/>
+	<where>
+		<if test="params.username != null and params.username !=''">
+			self.username like concat(concat('%',#{params.username}),'%')
+		</if>
+	</where>
+</select>
+</mapper>

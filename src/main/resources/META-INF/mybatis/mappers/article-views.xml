@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kissme.mimo.domain.article.ArticleViews">
+
+<resultMap type="ArticleViews" id="articleViewsResult">
+	<id property="id" column="id"/>
+	<result property="views" column="views"/>
+</resultMap>
+
+<sql id="commonSelect">
+	select 
+		self.*
+	from mimo_article_views self
+</sql>
+
+<insert id="save" keyProperty="id" >
+	insert into mimo_article_views(id,views) values(#{id},#{views})
+</insert>
+
+<update id="update" >
+	update mimo_article_views set views=#{views} where id=#{id}
+</update>
+
+<select id="get" resultMap="articleViewsResult">
+	<include refid="commonSelect" />
+	where id=#{id}
+</select>
+</mapper>

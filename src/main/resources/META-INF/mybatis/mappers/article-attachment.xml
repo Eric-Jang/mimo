@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kissme.mimo.domain.article.ArticleAttachment">
+
+<resultMap type="ArticleAttachment" id="articleAttachmentResult">
+	<id property="id" column="id"/>
+	<result property="name" column="name"/>
+	<result property="path" column="path"/>
+	<result property="contentType" column="content_type"/>
+	<result property="createTime" column="create_time"/>
+	<association property="article" column="article_id" javaType="Article" resultMap="articleOnAttachmentResult" />
+</resultMap>
+
+<resultMap type="Article" id="articleOnAttachmentResult">
+	<id property="id" column="article_id"/>
+	<result property="title" column="article_title"/>
+</resultMap>
+
+<sql id="commonSelect">
+	select   
+		self.*,
+		article.id as article_id,
+		article.title as article_title 
+	from mimo_article_attachment self 
+	left join mimo_article article on self.article_id=article.id 
+</sql>
+
+<sql id="articleAttachmentOrderBy">
+	<if test="order == null or order == ''">
+		order by self.create_time desc
+	</if>
+</sql>
+
+<insert id="save" keyProperty="id" useGeneratedKeys="true" >
+	insert into mimo_article_attachment(name,path,content_type,create_time,article_id)
+				values(#{name},#{path},#{contentType},#{createTime},#{article.id})
+</insert>
+<update id="update" >
+	update mimo_article_attachment 
+			set name=#{name},path=#{path},content_type=#{contentType},article_id=#{article.id} 
+			where id=#{id}
+</update>
+
+
+<delete id="delete" >
+	delete from mimo_article_attachment where id=#{id}
+</delete>
+
+<select id="get" resultMap="articleAttachmentResult">
+	<include refid="commonSelect"/>
+	where self.id=#{id}
+</select>
+<select id="query" resultMap="articleAttachmentResult">
+	<include refid="commonSelect"/>
+</select>
+<select id="queryPage" resultMap="articleAttachmentResult">
+	<include refid="commonSelect"/>
+	<include refid="articleAttachmentOrderBy"/>
+	<where>
+		<if test="params.name != null and params.name != ''">
+			self.name like concat(concat('%',#{params.name}),'%')
+		</if>
+		<if test="params.article != null and params.article != ''">
+			and self.article_id=#{params.article}
+		</if>
+	</where>
+</select>
+</mapper>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kissme.mimo.domain.channel.Channel">
+<cache eviction="LRU" size="128" flushInterval="1800000" readOnly="true"/>
+
+<resultMap type="Channel" id="channelResult">
+	<id property="id" column="id"/>
+	<result property="name" column="name"/>
+	<result property="path" column="path"/>
+	<result property="about" column="about"/>
+	<result property="priority" column="priority"/>
+	<result property="title" column="title"/>
+	<result property="metaKeyword" column="meta_keyword"/>
+	<result property="metaDescr" column="meta_descr"/>
+	<result property="metaTitle" column="meta_title"/>
+	<association property="father" column="father_id" javaType="Channel" select="queryChannelFather" />
+	<association property="selfTemplate" column="self_template_id" resultMap="selfTemplate" />
+	<association property="articleTemplate" column="article_template_id" resultMap="articleTemplate" />
+	<collection property="children" javaType="ArrayList" ofType="Channel" column="id" select="queryChannelChildren" />
+</resultMap>
+
+<resultMap type="Template" id="selfTemplate">
+	<id property="id" column="self_template_id"/>
+	<result property="name" column="self_template_name"/>
+	<result property="path" column="self_template_path"/>
+</resultMap>
+
+<resultMap type="Template" id="articleTemplate">
+	<id property="id" column="article_template_id"/>
+	<result property="name" column="article_template_name"/>
+	<result property="path" column="article_template_path"/>
+</resultMap>
+
+<sql id="commonSelect">
+	select   
+		self.*,
+		selfTemplate.id as self_template_id,
+		selfTemplate.name as self_template_name,
+		selfTemplate.path as self_template_path,  
+		articleTemplate.id as article_template_id,
+		articleTemplate.name as article_template_name,
+		articleTemplate.path as article_template_path  
+	from mimo_channel self 
+	left join mimo_template selfTemplate on self.self_template_id=selfTemplate.id
+	left join mimo_template articleTemplate on self.article_template_id=articleTemplate.id
+</sql>
+
+<insert id="save" keyProperty="id" useGeneratedKeys="true" >
+	insert into mimo_channel(name,path,about,priority,title,meta_keyword,meta_descr,meta_title,self_template_id,article_template_id,father_id)
+				values(#{name},#{path},#{about},#{priority},#{title},#{metaKeyword},#{metaDescr},#{metaTitle},#{selfTemplate.id},#{articleTemplate.id},#{father.id})
+</insert>
+<update id="update" >
+	update mimo_channel
+			set name=#{name},path=#{path},about=#{about},priority=#{priority},title=#{title},
+					meta_keyword=#{metaKeyword},meta_descr=#{metaDescr},self_template_id=#{selfTemplate.id},
+					article_template_id=#{articleTemplate.id},father_id=#{father.id},meta_title=#{metaTitle} 
+			where id=#{id}
+</update>
+
+
+<delete id="delete" >
+	delete from mimo_channel where id=#{id}
+</delete>
+
+<select id="queryChannelChildren" resultMap="channelResult">
+	<include refid="commonSelect"/>
+	where self.father_id=#{id} 
+	<include refid="channelOrderBy"/>
+</select>
+<select id="queryChannelFather" resultMap="channelResult">
+	<include refid="commonSelect"/> 
+	where self.id=#{father.id}
+</select>
+
+<sql id="channelOrderBy">
+	order by self.priority desc,self.id desc
+</sql>
+
+<select id="queryUniqueByName" parameterType="string" resultMap="channelResult">
+	 <include refid="commonSelect"/>
+	where self.name=#{name}
+</select>
+
+<select id="queryUniqueByPath" parameterType="string" resultMap="channelResult">
+	 <include refid="commonSelect"/>
+	where self.path=#{path}
+</select>
+
+<select id="get" resultMap="channelResult">
+	<include refid="commonSelect"/>
+	where self.id=#{id}
+</select>
+
+<select id="query" resultMap="channelResult">
+	<include refid="commonSelect"/>
+	<include refid="channelOrderBy"/>
+</select>
+
+<select id="queryChildren" resultMap="channelResult">
+	<include refid="commonSelect"/>
+	where self.father_id=#{id} 
+	<include refid="channelOrderBy"/>
+</select>
+
+<select id="queryPage" resultMap="channelResult" useCache="false">
+	<include refid="commonSelect"/> 
+	<where>
+		<if test="params.name != null and params.name != ''">
+			self.name like concat(concat('%',#{params.name}),'%')
+		</if>
+		<if test="params.path != null and params.path != ''">
+			and self.path like concat(concat('%',#{params.path}),'%')
+		</if>
+		<if test="params.fatherId != null and params.fatherId != ''">
+			and self.father_id=#{params.fatherId}
+		</if>
+		<if test="params.onTop != null and params.onTop == 'true'">
+			and self.father_id is null
+		</if>
+	</where>
+	<include refid="channelOrderBy"/> 
+</select>
+
+<select id="queryTop" resultMap="channelResult">
+	<include refid="commonSelect"/>
+	where self.father_id is null 
+	<include refid="channelOrderBy"/>
+</select>
+</mapper>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kissme.mimo.domain.template.Template">
+
+<resultMap type="Template" id="templateResult">
+	<id property="id" column="id"/>
+	<result property="name" column="name"/>
+	<result property="path" column="path"/>
+	<result property="encode" column="encode"/>
+	<result property="content" column="content"/>
+	<result property="modifyTime" column="modify_time"/>
+</resultMap>
+<resultMap type="Template" id="lazyTemplateResult">
+	<id property="id" column="id"/>
+	<result property="name" column="name"/>
+	<result property="path" column="path"/>
+	<result property="encode" column="encode"/>
+	<result property="modifyTime" column="modify_time"/>
+</resultMap>
+
+<sql id="commonSelect">
+	select 
+		self.*
+	from mimo_template self
+</sql>
+<sql id="lazySelect">
+	select 
+		self.id as id,
+		self.name as name,
+		self.path as path,
+		self.encode as encode,
+		self.modify_time as modify_time 
+	from mimo_template self
+</sql>
+
+<sql id="templateOrderBy">
+	<if test="order == null or order == ''">
+		order by self.modify_time desc
+	</if>
+</sql>
+
+<insert id="save" keyProperty="id" useGeneratedKeys="true" >
+	insert into mimo_template(name,path,encode,content,modify_time) 
+			values(#{name},#{path},#{encode},#{content},#{modifyTime})				
+</insert>
+<update id="update" >
+	update mimo_template 
+			set name=#{name},path=#{path},encode=#{encode},content=#{content},modify_time=#{modifyTime} where id=#{id}
+</update>
+
+<delete id="delete" >
+	delete from mimo_template where id=#{id}
+</delete>
+
+<select id="get" resultMap="templateResult">
+	<include refid="commonSelect"/>
+	where self.id=#{id}
+</select>
+
+<select id="getByName" resultMap="templateResult">
+	<include refid="commonSelect"/>
+	where self.name=#{name}
+</select>
+
+<select id="lazyGetByName" resultMap="templateResult">
+	<include refid="lazySelect"/>
+	where self.name=#{name}
+</select>
+
+<select id="query" resultMap="templateResult">
+	<include refid="commonSelect"/>
+</select>
+
+<select id="lazyQuery" resultMap="lazyTemplateResult">
+	<include refid="lazySelect"/>
+</select>
+
+<select id="queryPage" resultMap="lazyTemplateResult">
+	<include refid="lazySelect"/>
+	<where>
+		<if test="params.name != null and params.name != ''">
+			self.name like concat(concat('%',#{params.name}),'%') 
+		</if>
+	</where>
+	<include refid="templateOrderBy"/>
+</select>
+</mapper>

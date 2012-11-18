@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kissme.mimo.domain.article.Article">
+
+<resultMap type="Article" id="articleResult">
+	<id property="id" column="id"/>
+	<result property="title" column="title"/>
+	<result property="content" column="content"/>
+	<result property="source" column="source"/>
+	<result property="priority" column="priority"/>
+	<result property="tags" column="tags"/>
+	<result property="onTop" column="on_top"/>
+	<result property="forbidComments" column="forbid_comments"/>
+	<result property="createTime" column="create_time"/>
+	<result property="modifyTime" column="modify_time"/>
+	<result javaType="java.util.Enumeration" typeHandler="com.kissme.mimo.infrastructure.persist.MybatisArticleStatusTypeHandler" property="status" column="status"/>
+	<association property="channel" column="channel_id" javaType="Channel" resultMap="channelOnArticleResult" />
+</resultMap>
+
+<resultMap type="Channel" id="channelOnArticleResult">
+	<id property="id" column="channel_id"/>
+	<result property="name" column="channel_name"/>
+	<result property="path" column="channel_path"/>
+	<result property="priority" column="channel_priority"/>
+	<result property="metaKeyword" column="channel_meta_keyword"/>
+	<result property="metaTitle" column="channel_meta_title"/>
+	<result property="metaDescr" column="channel_meta_descr"/>
+</resultMap>
+
+<resultMap type="Article" id="lazyArticleResult">
+	<id property="id" column="id"/>
+	<result property="title" column="title"/>
+	<result property="priority" column="priority"/>
+	<result property="source" column="source"/>
+	<result property="onTop" column="on_top"/>
+	<result property="forbidComments" column="forbid_comments"/>
+	<result property="modifyTime" column="modify_time"/>
+	<result javaType="java.util.Enumeration" typeHandler="com.kissme.mimo.infrastructure.persist.MybatisArticleStatusTypeHandler" property="status" column="status"/>
+	<association property="channel" column="channel_id" javaType="Channel" resultMap="lazyChannelOnArticleResult" />
+</resultMap>
+<resultMap type="Channel" id="lazyChannelOnArticleResult">
+	<id property="id" column="channel_id"/>
+	<result property="name" column="channel_name"/>
+	<result property="path" column="channel_path"/>
+</resultMap>
+
+<sql id="commonSelect">
+	select   
+		self.id as id,
+		self.title as title,
+		self.priority as priority,
+		self.source as source,
+		self.content as content,
+		self.tags as tags,
+		self.on_top as on_top,
+		self.forbid_comments as forbid_comments,
+		self.status as status,
+		self.create_time as create_time,
+		self.modify_time as modify_time,
+		channel.id as channel_id,
+		channel.name as channel_name,
+		channel.path as channel_path 
+	from mimo_article self 
+	left join mimo_channel channel on self.channel_id=channel.id 
+</sql>
+
+<sql id="lazySelect">
+	select   
+		self.id as id,
+		self.title as title,
+		self.source as source,
+		self.priority as priority,
+		self.forbid_comments as forbid_comments,
+		self.on_top as on_top,
+		self.modify_time as modify_time,
+		channel.id as channel_id,
+		channel.name as channel_name,
+		channel.path as channel_path   
+	from mimo_article self 
+	left join mimo_channel channel on self.channel_id=channel.id 
+</sql>
+
+<sql id="articleOrderBy">
+	<if test="order == null or order ==''">
+		order by on_top desc,priority desc,modify_time desc 
+	</if>
+</sql>
+
+<insert id="save" keyProperty="id" useGeneratedKeys="true" >
+	insert into mimo_article(title,content,not_empty_photos,priority,tags,source,on_top,forbid_comments,status,create_time,modify_time,channel_id)
+				values(#{title},#{content},#{notEmptyPhotos},#{priority},#{tags},#{source},#{onTop},#{forbidComments},#{status},#{createTime},#{modifyTime},#{channel.id})
+</insert>
+<update id="update" >
+	update mimo_article
+			set title=#{title},content=#{content},not_empty_photos=#{notEmptyPhotos},priority=#{priority},tags=#{tags},
+					source=#{source},on_top=#{onTop},forbid_comments=#{forbidComments},status=#{status},
+					modify_time=#{modifyTime},channel_id=#{channel.id}  
+			where id=#{id}
+</update>
+
+<update id="markOnTop" >
+	update mimo_article set on_top=1 where id in 
+	<foreach item="id" collection="array" open="(" separator="," close=")">
+		#{id}
+	</foreach>
+</update>
+
+<update id="markNotOnTop" >
+	update mimo_article set on_top=0 where id in 
+	<foreach item="id" collection="array" open="(" separator="," close=")">
+		#{id}
+	</foreach>
+</update>
+
+<update id="markNotComments" >
+	update mimo_article set forbid_comments=1 where id in 
+	<foreach item="id" collection="array" open="(" separator="," close=")">
+		#{id}
+	</foreach>
+</update>
+
+<update id="markAllowComments" >
+	update mimo_article set forbid_comments=0 where id in 
+	<foreach item="id" collection="array" open="(" separator="," close=")">
+		#{id}
+	</foreach>
+</update>
+
+<update id="markOnline" >
+	update mimo_article set status='ONLINE' where id in 
+	<foreach item="id" collection="array" open="(" separator="," close=")">
+		#{id}
+	</foreach>
+</update>
+
+<update id="markOffline" >
+	update mimo_article set status='OFFLINE' where id in 
+	<foreach item="id" collection="array" open="(" separator="," close=")">
+		#{id}
+	</foreach>
+</update>
+
+<delete id="delete" >
+	delete from mimo_article where id=#{id}
+</delete>
+
+<select id="get" resultMap="articleResult">
+	<include refid="commonSelect"/>
+	where self.id=#{id}
+</select>
+
+<select id="lazyGet" resultMap="lazyArticleResult">
+	<include refid="lazySelect"/>
+	where self.id=#{id}
+</select>
+
+<select id="query" resultMap="articleResult">
+	<include refid="commonSelect"/>
+	order by self.on_top desc,self.priority desc,self.modify_time desc 
+</select>
+<select id="lazyQuery" resultMap="lazyArticleResult">
+	<include refid="lazySelect"/>
+	order by self.on_top desc,self.priority desc,self.modify_time desc 
+</select>
+
+<select id="queryPage" resultMap="articleResult" useCache="false">
+	<include refid="commonSelect"/> 
+	<where>
+		<if test="params.status != null">
+			self.status=#{params.status} 
+		</if>
+		<if test="params.channel != null and params.channel != ''">
+			and channel.id=#{params.channel}
+		</if>
+		<if test="params.fatherChannel != null and params.fatherChannel != ''">
+			and (channel.id=#{params.fatherChannel} or channel.father_id=#{params.fatherChannel}) 
+		</if>
+	</where>
+	<include refid="articleOrderBy"/> 
+</select>
+
+<select id="lazyQueryPage" resultMap="lazyArticleResult" useCache="false">
+	<include refid="lazySelect"/> 
+	<where>
+		<if test="params.status != null">
+			self.status=#{params.status} 
+		</if>
+		<if test="params.channel != null and params.channel != ''">
+			and self.channel_id=#{params.channel}
+		</if>
+		<if test="params.channelId != null and params.channelId != ''">
+			and self.channel_id=#{params.channelId}
+		</if>
+		<if test="params.title != null and params.title != ''">
+			and self.title like concat(concat('%',#{params.title}),'%')
+		</if>
+	</where>
+	<include refid="articleOrderBy"/>
+</select>
+
+</mapper>

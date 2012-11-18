@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<settings>
+		<setting name="cacheEnabled" value="true"/>
+		<setting name="lazyLoadingEnabled" value="true"/>
+		<setting name="aggressiveLazyLoading" value="false"/>
+	</settings>
+	<typeAliases>
+		<typeAlias type="com.kissme.mimo.domain.channel.Channel" alias="Channel" />
+		<typeAlias type="com.kissme.mimo.domain.template.Template" alias="Template" />
+		<typeAlias type="com.kissme.mimo.domain.article.Article" alias="Article" />
+		<typeAlias type="com.kissme.mimo.domain.article.ArticleComment" alias="ArticleComment" />
+		<typeAlias type="com.kissme.mimo.domain.article.ArticleAttachment" alias="ArticleAttachment" />
+		<typeAlias type="com.kissme.mimo.domain.article.ArticleViews" alias="ArticleViews" />
+		<typeAlias type="com.kissme.mimo.domain.guestbook.Guestbook" alias="Guestbook" />
+		<typeAlias type="com.kissme.mimo.domain.MonitoringRecord" alias="MonitoringRecord" />
+		
+		<typeAlias type="com.kissme.mimo.domain.security.User" alias="User" />
+		<typeAlias type="com.kissme.mimo.domain.security.Role" alias="Role" />
+		<typeAlias type="com.kissme.mimo.domain.security.Authority" alias="Authority" />
+	</typeAliases>
+
+	<plugins>
+		<plugin interceptor="com.kissme.core.orm.mybatis.MybatisPagePlugin">
+			<property name="dialect" value="com.kissme.core.orm.dialect.impl.MySQLDialect" />
+		</plugin>
+	</plugins>
+</configuration>

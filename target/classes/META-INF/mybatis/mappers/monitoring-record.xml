@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kissme.mimo.domain.MonitoringRecord">
+
+<resultMap type="MonitoringRecord" id="monitoringRecordResult">
+	<id property="id" column="id"/>
+	<result property="action" column="action"/>
+	<result property="actor" column="actor"/>
+	<result property="source" column="source"/>
+	<result property="target" column="target"/>
+	<result property="createTime" column="create_time"/>
+	<result property="elapsedTime" column="elapsed_time"/>
+</resultMap>
+
+<sql id="commonSelect">
+	select 
+		self.*
+	from mimo_monitoring_record self
+</sql>
+
+<insert id="save" keyProperty="id" useGeneratedKeys="true" >
+	insert into mimo_monitoring_record(action,actor,source,target,elapsed_time,create_time) 
+			values(#{action},#{actor},#{source},#{target},#{elapsedTime},#{createTime})				
+</insert>
+<select id="queryPage" resultMap="monitoringRecordResult">
+	<include refid="commonSelect"/>
+	<where>
+		<if test="params.actor != null and params.actor != '' ">
+			self.actor like concat(concat('%',#{params.actor}),'%') 
+		</if>
+		<if test="params.action != null and params.action != '' ">
+			self.action like concat(concat('%',#{params.action}),'%') 
+		</if>
+	</where>
+	order by self.create_time desc 
+</select>
+</mapper>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kissme.mimo.domain.guestbook.Guestbook">
+
+<resultMap type="Guestbook" id="guestbookResult">
+	<id property="id" column="id"/>
+	<result property="author" column="author"/>
+	<result property="email" column="email"/>
+	<result property="content" column="content"/>
+	<result property="status" column="status"/>
+	<result property="admin" column="admin"/>
+	<result property="createTime" column="create_time"/>
+</resultMap>
+
+<sql id="commonSelect">
+	select 
+		self.*
+	from mimo_guestbook self
+</sql>
+
+<sql id="guestbookOrderBy">
+	<if test="order == null or order == ''">
+		order by self.create_time desc
+	</if>
+</sql>
+
+<insert id="save" keyProperty="id" useGeneratedKeys="true" >
+	insert into mimo_guestbook(author,email,content,status,admin,create_time) 
+			values(#{author},#{email},#{content},#{status},#{admin},#{createTime})				
+</insert>
+
+<update id="update" >
+	update mimo_guestbook set author=#{author},email=#{email},content=#{content},status=#{status} where id=#{id}
+</update>
+
+<delete id="delete">
+	delete from mimo_guestbook where id=#{id}
+</delete>
+
+<select id="get" resultMap="guestbookResult">
+	<include refid="commonSelect" />
+	where id=#{id}
+</select>
+
+<select id="queryPage" resultMap="guestbookResult">
+	<include refid="commonSelect"/>
+	<where>
+		<if test="params.author != null and params.author != '' ">
+			self.author like concat(concat('%',#{params.author}),'%') 
+		</if>
+		<if test="params.status != null">
+			self.status=#{params.status} 
+		</if>
+	</where>
+	<include refid="guestbookOrderBy"/>
+</select>
+</mapper>

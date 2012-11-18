@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kissme.mimo.domain.Confs">
+<cache eviction="LRU" size="3" readOnly="true"/>
+
+<resultMap type="hashmap" id="confsResult">
+<result property="data"  column="data" javaType="byte[]" jdbcType="BLOB" typeHandler="org.apache.ibatis.type.BlobTypeHandler" />  
+</resultMap>
+
+<select id="getConf" resultMap="confsResult">
+	select data from mimo_confs where name='conf'
+</select>
+<select id="getHomeConf" resultMap="confsResult">
+	select data from mimo_confs where name='home_conf'
+</select>
+<select id="getEmailConf" resultMap="confsResult">
+	select data from mimo_confs where name='email_conf'
+</select>
+
+<update id="updateConf">
+	update mimo_confs set data=#{array} where name='conf'
+</update>
+
+<update id="updateHomeConf">
+	update mimo_confs set data=#{array} where name='home_conf'
+</update>
+
+<update id="updateEmailConf">
+	update mimo_confs set data=#{array} where name='email_conf'
+</update>
+</mapper>
